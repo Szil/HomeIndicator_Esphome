@@ -1,0 +1,95 @@
+obj:
+  styles: content_container
+  layout:
+    type: FLEX
+    flex_flow: COLUMN
+    flex_align_main: CENTER
+    flex_align_cross: CENTER
+    pad_row: 5
+  widgets:
+    - obj:
+        width: 443
+        height: 194
+        bg_opa: TRANSP
+        pad_all: 0
+        layout:
+          type: FLEX
+          flex_flow: ROW
+          flex_align_main: CENTER
+          flex_align_cross: CENTER
+        widgets:
+          - label:
+              id: weather_icon_label
+              width: 170
+              height: 160
+              text_color: 0xeebf41
+              text_font: weather_icons
+              text_align: CENTER
+              text: "\U000F0026"
+          - label:
+              id: weather_temperature_label
+              width: 260
+              height: 90
+              text_color: 0xffffff
+              text_font: libreFranklin50
+              text_align: CENTER
+              text: "--"
+    - label:
+        id: weather_condition_label
+        width: 443
+        height: 44
+        text_color: 0xffffff
+        text_font: libreFranklin24
+        text_align: CENTER
+        text: "Waiting for weather..."
+    - obj:
+        width: 443
+        height: 72
+        bg_opa: TRANSP
+        pad_all: 0
+        layout:
+          type: FLEX
+          flex_flow: ROW
+          flex_align_main: SPACE_BETWEEN
+          flex_align_cross: CENTER
+        widgets:
+          - obj:
+              width: 216
+              height: 64
+              radius: 15
+              bg_color: 0x272727
+              bg_opa: COVER
+              pad_all: 0
+              layout:
+                type: FLEX
+                flex_flow: ROW
+                flex_align_main: CENTER
+                flex_align_cross: CENTER
+                flex_align_track: CENTER
+              widgets:
+                - label:
+                    id: weather_humidity_label
+                    text_color: 0xababab
+                    text_font: libreFranklin18
+                    text_align: CENTER
+                    text: "Humidity --"
+          - obj:
+              width: 216
+              height: 64
+              radius: 15
+              bg_color: 0x272727
+              bg_opa: COVER
+              pad_all: 0
+              layout:
+                type: FLEX
+                flex_flow: ROW
+                flex_align_main: CENTER
+                flex_align_cross: CENTER
+                flex_align_track: CENTER
+              widgets:
+                - label:
+                    id: weather_wind_label
+                    text_color: 0xababab
+                    text_font: libreFranklin18
+                    text_align: CENTER
+                    text: "Wind --"

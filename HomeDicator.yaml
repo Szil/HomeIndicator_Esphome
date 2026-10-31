@@ -14,8 +14,9 @@ substitutions:
   # ADJUST TOTAL NUMBER OF PAGES HERE
   # Is used to generate navigation dots and their logic (set it to your pages + 1 for the settings page)
   # ----------------------------------------------------------------------------------------------------
-  total_pages: "4"
+  total_pages: "5"
 
+  weather_entity: "weather.forecast_home"
   heater_entity: "heatermain_house_heating"
   # These must exactly match the preset_modes reported by the climate entity.
   heater_preset_comfort: "comfort"
@@ -81,6 +82,30 @@ sensor:
       then:
         - script.execute: refresh_heater_display
 
+  - platform: homeassistant
+    id: weather_temperature
+    entity_id: ${weather_entity}
+    attribute: temperature
+    on_value:
+      then:
+        - script.execute: refresh_weather_display
+
+  - platform: homeassistant
+    id: weather_humidity
+    entity_id: ${weather_entity}
+    attribute: humidity
+    on_value:
+      then:
+        - script.execute: refresh_weather_display
+
+  - platform: homeassistant
+    id: weather_wind_speed
+    entity_id: ${weather_entity}
+    attribute: wind_speed
+    on_value:
+      then:
+        - script.execute: refresh_weather_display
+
 text_sensor:
   - platform: homeassistant
     id: heater_entity_state
@@ -105,7 +130,123 @@ text_sensor:
       then:
         - script.execute: refresh_heater_display
 
+  - platform: homeassistant
+    id: weather_condition
+    entity_id: ${weather_entity}
+    on_value:
+      then:
+        - script.execute: refresh_weather_display
+
+  - platform: homeassistant
+    id: weather_temperature_unit
+    entity_id: ${weather_entity}
+    attribute: temperature_unit
+    on_value:
+      then:
+        - script.execute: refresh_weather_display
+
+  - platform: homeassistant
+    id: weather_wind_speed_unit
+    entity_id: ${weather_entity}
+    attribute: wind_speed_unit
+    on_value:
+      then:
+        - script.execute: refresh_weather_display
+
 script:
+  - id: refresh_weather_display
+    then:
+      - lvgl.label.update:
+          id: weather_condition_label
+          text: !lambda |-
+            const std::string &condition = id(weather_condition).state;
+            if (condition == "clear-night") return "Clear Night";
+            if (condition == "cloudy") return "Cloudy";
+            if (condition == "exceptional") return "Exceptional";
+            if (condition == "fog") return "Fog";
+            if (condition == "hail") return "Hail";
+            if (condition == "lightning") return "Lightning";
+            if (condition == "lightning-rainy") return "Thunderstorms and Rain";
+            if (condition == "partlycloudy") return "Partly Cloudy";
+            if (condition == "pouring") return "Pouring Rain";
+            if (condition == "rainy") return "Rainy";
+            if (condition == "snowy") return "Snowy";
+            if (condition == "snowy-rainy") return "Snow and Rain";
+            if (condition == "sunny") return "Sunny";
+            if (condition == "windy") return "Windy";
+            if (condition == "windy-variant") return "Windy and Cloudy";
+            return "Unavailable";
+      - lvgl.label.update:
+          id: weather_icon_label
+          text: !lambda |-
+            const std::string &condition = id(weather_condition).state;
+            if (condition == "clear-night") return "\U000F0594";
+            if (condition == "cloudy") return "\U000F0590";
+            if (condition == "fog") return "\U000F0591";
+            if (condition == "hail") return "\U000F0592";
+            if (condition == "lightning") return "\U000F0593";
+            if (condition == "lightning-rainy") return "\U000F067E";
+            if (condition == "partlycloudy") return "\U000F0595";
+            if (condition == "pouring") return "\U000F0596";
+            if (condition == "rainy") return "\U000F0597";
+            if (condition == "snowy") return "\U000F0598";
+            if (condition == "snowy-rainy") return "\U000F067F";
+            if (condition == "sunny") return "\U000F0599";
+            if (condition == "windy") return "\U000F059D";
+            if (condition == "windy-variant") return "\U000F059E";
+            return "\U000F0026";
+      - if:
+          condition:
+            lambda: |-
+              const std::string &state = id(weather_condition).state;
+              return state.empty() || state == "unknown" || state == "unavailable";
+          then:
+            - lvgl.label.update:
+                id: weather_condition_label
+                text: "Unavailable"
+      - if:
+          condition:
+            lambda: |-
+              const std::string &state = id(weather_condition).state;
+              return !state.empty() && state != "unknown" && state != "unavailable" && std::isfinite(id(weather_temperature).state);
+          then:
+            - lvgl.label.update:
+                id: weather_temperature_label
+                text: !lambda |-
+                  const std::string &unit = id(weather_temperature_unit).state;
+                  char buffer[24];
+                  if (unit.empty() || unit == "unknown" || unit == "unavailable") {
+                    snprintf(buffer, sizeof(buffer), "%.1f ?", id(weather_temperature).state);
+                  } else {
+                    snprintf(buffer, sizeof(buffer), "%.1f %s", id(weather_temperature).state, unit.c_str());
+                  }
+                  return buffer;
+          else:
+            - lvgl.label.update:
+                id: weather_temperature_label
+                text: "--"
+      - lvgl.label.update:
+          id: weather_humidity_label
+          text: !lambda |-
+            const std::string &state = id(weather_condition).state;
+            if (state.empty() || state == "unknown" || state == "unavailable" || !std::isfinite(id(weather_humidity).state)) return "Humidity --";
+            char buffer[24];
+            snprintf(buffer, sizeof(buffer), "Humidity %.0f%%", id(weather_humidity).state);
+            return buffer;
+      - lvgl.label.update:
+          id: weather_wind_label
+          text: !lambda |-
+            const std::string &state = id(weather_condition).state;
+            if (state.empty() || state == "unknown" || state == "unavailable" || !std::isfinite(id(weather_wind_speed).state)) return "Wind --";
+            const std::string &unit = id(weather_wind_speed_unit).state;
+            char buffer[32];
+            if (unit.empty() || unit == "unknown" || unit == "unavailable") {
+              snprintf(buffer, sizeof(buffer), "Wind %.1f ?", id(weather_wind_speed).state);
+            } else {
+              snprintf(buffer, sizeof(buffer), "Wind %.1f %s", id(weather_wind_speed).state, unit.c_str());
+            }
+            return buffer;
+
   - id: refresh_heater_display
     then:
       - if:
@@ -198,6 +339,14 @@ lvgl:
     # ----------------------------
     # ADD / ADJUST YOUR PAGES HERE
     # ----------------------------
+    - id: weather_page
+      bg_opa: TRANSP
+      widgets:
+        - !include
+            file: HomeDicator/user_interface/templates/page_title.yaml
+            vars:
+              title: "Weather"
+        - !include HomeDicator/user_interface/templates/tiles/weather/current.yaml
     - id: heater_page
       bg_opa: TRANSP
       widgets:
