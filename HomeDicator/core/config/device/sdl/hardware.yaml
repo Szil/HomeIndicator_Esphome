@@ -14,7 +14,7 @@ touchscreen:
 display:
   - platform: sdl
     id: development_display
-    show_test_card: true
+    show_test_card: false
     auto_clear_enabled: false
     dimensions:
       width: 480

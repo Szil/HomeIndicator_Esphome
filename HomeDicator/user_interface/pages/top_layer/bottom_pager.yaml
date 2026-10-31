@@ -6,6 +6,7 @@ obj:
   width: 480
   height: SIZE_CONTENT
   bg_opa: TRANSP
+  widgets: []
   layout:
     type: FLEX
     flex_flow: ROW

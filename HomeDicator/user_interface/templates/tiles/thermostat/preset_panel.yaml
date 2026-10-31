@@ -1,0 +1,216 @@
+obj:
+  styles: content_container
+  layout:
+    type: FLEX
+    flex_flow: COLUMN
+    flex_align_main: CENTER
+    flex_align_cross: CENTER
+    pad_row: 4
+  widgets:
+    - obj:
+        width: 443
+        height: 60
+        radius: 15
+        bg_color: 0x272727
+        bg_opa: COVER
+        pad_all: 0
+        layout:
+          type: FLEX
+          flex_flow: ROW
+          flex_align_main: CENTER
+          flex_align_cross: CENTER
+          flex_align_track: CENTER
+        widgets:
+          - label:
+              id: heater_status_label
+              text_color: 0xffffff
+              text_font: libreFranklin32
+              text: "Waiting"
+    - obj:
+        width: 443
+        height: 180
+        bg_opa: TRANSP
+        pad_all: 0
+        layout:
+          type: FLEX
+          flex_flow: ROW
+          flex_align_main: CENTER
+          flex_align_cross: CENTER
+        widgets:
+          - obj:
+              width: 180
+              height: 180
+              bg_opa: TRANSP
+              pad_all: 0
+              widgets:
+                - arc:
+                    id: heater_target_arc
+                    state:
+                      disabled: true
+                    width: 180
+                    height: 180
+                    pad_all: 0
+                    adjustable: true
+                    min_value: 5
+                    max_value: 25
+                    value: 5
+                    arc_width: 16
+                    arc_color: 0x3c3c3c
+                    indicator:
+                      arc_width: 16
+                      arc_color: 0xeebf41
+                    knob:
+                      bg_color: 0xffffff
+                    on_press:
+                      then:
+                        - globals.set:
+                            id: user_is_interacting
+                            value: 'true'
+                    on_release:
+                      then:
+                        - globals.set:
+                            id: user_is_interacting
+                            value: 'false'
+                    on_value:
+                      then:
+                        - if:
+                            condition:
+                              lambda: |-
+                                const std::string &state = id(heater_entity_state).state;
+                                return id(user_is_interacting) && !state.empty() && state != "unknown" && state != "unavailable";
+                            then:
+                              - homeassistant.action:
+                                  action: climate.set_temperature
+                                  data:
+                                    entity_id: climate.${heater_entity}
+                                    temperature: !lambda return static_cast<int>(x);
+                - obj:
+                    x: 0
+                    y: 48
+                    width: 180
+                    height: 84
+                    bg_opa: TRANSP
+                    pad_all: 0
+                    layout:
+                      type: FLEX
+                      flex_flow: COLUMN
+                      flex_align_main: CENTER
+                      flex_align_cross: CENTER
+                      flex_align_track: CENTER
+                      pad_row: 0
+                    widgets:
+                      - label:
+                          text_color: 0xababab
+                          text_font: libreFranklin14
+                          text: "TARGET"
+                      - label:
+                          id: heater_target_label
+                          text_color: 0xeebf41
+                          text_font: libreFranklin32
+                          text: "Loading…"
+    - obj:
+        width: 443
+        height: 62
+        bg_opa: TRANSP
+        pad_all: 0
+        layout:
+          type: FLEX
+          flex_flow: ROW
+          flex_align_main: SPACE_BETWEEN
+          flex_align_cross: CENTER
+        widgets:
+          - obj:
+              width: 137
+              height: 62
+              radius: 15
+              bg_color: 0x3b3525
+              bg_opa: COVER
+              clickable: true
+              on_click:
+                then:
+                  - if:
+                      condition:
+                        lambda: |-
+                          const std::string &state = id(heater_entity_state).state;
+                          return !state.empty() && state != "unknown" && state != "unavailable";
+                      then:
+                        - homeassistant.action:
+                            action: climate.set_preset_mode
+                            data:
+                              entity_id: climate.${heater_entity}
+                              preset_mode: ${preset_comfort}
+              layout:
+                type: FLEX
+                flex_flow: ROW
+                flex_align_main: CENTER
+                flex_align_cross: CENTER
+              widgets:
+                - label:
+                    text_color: 0xffffff
+                    text_font: libreFranklin24
+                    text: "Comfort"
+          - obj:
+              width: 137
+              height: 62
+              radius: 15
+              bg_color: 0x3b3525
+              bg_opa: COVER
+              clickable: true
+              on_click:
+                then:
+                  - if:
+                      condition:
+                        lambda: |-
+                          const std::string &state = id(heater_entity_state).state;
+                          return !state.empty() && state != "unknown" && state != "unavailable";
+                      then:
+                        - homeassistant.action:
+                            action: climate.set_preset_mode
+                            data:
+                              entity_id: climate.${heater_entity}
+                              preset_mode: ${preset_eco}
+              layout:
+                type: FLEX
+                flex_flow: ROW
+                flex_align_main: CENTER
+                flex_align_cross: CENTER
+              widgets:
+                - label:
+                    text_color: 0xffffff
+                    text_font: libreFranklin24
+                    text: "Eco"
+          - obj:
+              width: 137
+              height: 62
+              radius: 15
+              bg_color: 0x3b3525
+              bg_opa: COVER
+              clickable: true
+              on_click:
+                then:
+                  - if:
+                      condition:
+                        lambda: |-
+                          const std::string &state = id(heater_entity_state).state;
+                          return !state.empty() && state != "unknown" && state != "unavailable";
+                      then:
+                        - homeassistant.action:
+                            action: climate.set_preset_mode
+                            data:
+                              entity_id: climate.${heater_entity}
+                              preset_mode: ${preset_home}
+              layout:
+                type: FLEX
+                flex_flow: ROW
+                flex_align_main: CENTER
+                flex_align_cross: CENTER
+              widgets:
+                - label:
+                    text_color: 0xffffff
+                    text_font: libreFranklin24
+                    text: "Home"
+    - label:
+        id: heater_preset_label
+        text_color: 0xababab
+        text_font: libreFranklin14
+        text: "Preset: —"

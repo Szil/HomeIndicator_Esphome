@@ -8,13 +8,19 @@ substitutions:
   # ------------------
   # ENTER API KEY HERE
   # ------------------
-  api_key: "<api-key>"
+  api_key: !secret homedicator_api_key
 
   # ----------------------------------------------------------------------------------------------------
   # ADJUST TOTAL NUMBER OF PAGES HERE
   # Is used to generate navigation dots and their logic (set it to your pages + 1 for the settings page)
   # ----------------------------------------------------------------------------------------------------
-  total_pages: "3"
+  total_pages: "4"
+
+  heater_entity: "heatermain_house_heating"
+  # These must exactly match the preset_modes reported by the climate entity.
+  heater_preset_comfort: "comfort"
+  heater_preset_eco: "eco"
+  heater_preset_home: "home"
 
   # --------------
   # OTHER SETTINGS
@@ -67,6 +73,111 @@ sensor:
       vars:
         hass_climate_id: "badezimmer_fenster" # You can ommit the "climate."
 
+  - platform: homeassistant
+    id: heater_target_temperature
+    entity_id: climate.${heater_entity}
+    attribute: temperature
+    on_value:
+      then:
+        - script.execute: refresh_heater_display
+
+text_sensor:
+  - platform: homeassistant
+    id: heater_entity_state
+    entity_id: climate.${heater_entity}
+    on_value:
+      then:
+        - script.execute: refresh_heater_display
+
+  - platform: homeassistant
+    id: heater_hvac_action
+    entity_id: climate.${heater_entity}
+    attribute: hvac_action
+    on_value:
+      then:
+        - script.execute: refresh_heater_display
+
+  - platform: homeassistant
+    id: heater_preset_mode
+    entity_id: climate.${heater_entity}
+    attribute: preset_mode
+    on_value:
+      then:
+        - script.execute: refresh_heater_display
+
+script:
+  - id: refresh_heater_display
+    then:
+      - if:
+          condition:
+            lambda: |-
+              const std::string &state = id(heater_entity_state).state;
+              return state.empty() || state == "unknown" || state == "unavailable";
+          then:
+            - lvgl.label.update:
+                id: heater_status_label
+                text: "Unavailable"
+            - lvgl.label.update:
+                id: heater_target_label
+                text: "Unavailable"
+            - lvgl.label.update:
+                id: heater_preset_label
+                text: "Preset: unavailable"
+            - lvgl.widget.update:
+                id: heater_target_arc
+                state:
+                  disabled: true
+          else:
+            - lvgl.label.update:
+                id: heater_status_label
+                text: !lambda |-
+                  const std::string &action = id(heater_hvac_action).state;
+                  if (action == "heating") return "Heating";
+                  if (action == "idle") return "Idle";
+                  if (action == "off") return "Off";
+                  if (action == "cooling") return "Cooling";
+                  if (action == "drying") return "Drying";
+                  if (action == "fan") return "Fan";
+                  if (action == "defrosting") return "Defrosting";
+                  return "Unknown";
+            - lvgl.label.update:
+                id: heater_preset_label
+                text: !lambda |-
+                  const std::string &preset = id(heater_preset_mode).state;
+                  if (preset.empty() || preset == "unknown" || preset == "unavailable") return "Preset: —";
+                  if (preset == "none") return "Preset: None";
+                  if (preset == "${heater_preset_comfort}") return "Preset: Comfort";
+                  if (preset == "${heater_preset_eco}") return "Preset: Eco";
+                  if (preset == "${heater_preset_home}") return "Preset: Home";
+                  return "Preset: " + preset;
+            - if:
+                condition:
+                  lambda: return std::isfinite(id(heater_target_temperature).state);
+                then:
+                  - lvgl.label.update:
+                      id: heater_target_label
+                      text: !lambda |-
+                        char buffer[20];
+                        snprintf(buffer, sizeof(buffer), "%.1f °C", id(heater_target_temperature).state);
+                        return buffer;
+                  - lvgl.arc.update:
+                      id: heater_target_arc
+                      value: !lambda |-
+                        const float target = id(heater_target_temperature).state;
+                        return target < 5.0f ? 5.0f : target > 25.0f ? 25.0f : target;
+                  - lvgl.widget.update:
+                      id: heater_target_arc
+                      state:
+                        disabled: false
+                else:
+                  - lvgl.label.update:
+                      id: heater_target_label
+                      text: "Loading…"
+                  - lvgl.widget.update:
+                      id: heater_target_arc
+                      state:
+                        disabled: true
+
 
 
 binary_sensor:
@@ -87,6 +198,20 @@ lvgl:
     # ----------------------------
     # ADD / ADJUST YOUR PAGES HERE
     # ----------------------------
+    - id: heater_page
+      bg_opa: TRANSP
+      widgets:
+        - !include
+            file: HomeDicator/user_interface/templates/page_title.yaml
+            vars:
+              title: "Thermostat"
+        - !include
+            file: HomeDicator/user_interface/templates/tiles/thermostat/preset_panel.yaml
+            vars:
+              heater_entity: ${heater_entity}
+              preset_comfort: ${heater_preset_comfort}
+              preset_eco: ${heater_preset_eco}
+              preset_home: ${heater_preset_home}
     - id: first_page
       bg_opa: TRANSP
       widgets:
