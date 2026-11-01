@@ -5,11 +5,11 @@ obj:
     flex_flow: COLUMN
     flex_align_main: CENTER
     flex_align_cross: CENTER
-    pad_row: 5
+    pad_row: 4
   widgets:
     - obj:
         width: 443
-        height: 194
+        height: 28
         bg_opa: TRANSP
         pad_all: 0
         layout:
@@ -19,32 +19,75 @@ obj:
           flex_align_cross: CENTER
         widgets:
           - label:
-              id: weather_icon_label
-              width: 170
-              height: 160
+              width: 28
+              height: 26
               text_color: 0xeebf41
-              text_font: weather_icons
+              text_font: weather_location_icon
               text_align: CENTER
-              text: "\U000F0026"
+              text: "\U000F034E"
+          - label:
+              id: weather_location_label
+              width: 400
+              height: 28
+              text_color: 0xababab
+              text_font: libreFranklin18
+              text_align: LEFT
+              long_mode: DOT
+              text: "Forecast location unavailable"
+    - obj:
+        width: 443
+        height: 125
+        scrollable: false
+        bg_opa: TRANSP
+        pad_all: 0
+        layout:
+          type: FLEX
+          flex_flow: ROW
+          flex_align_main: CENTER
+          flex_align_cross: CENTER
+          pad_column: 0
+        widgets:
+          - obj:
+              width: 195
+              height: 125
+              scrollable: false
+              bg_opa: TRANSP
+              pad_all: 0
+              layout:
+                type: FLEX
+                flex_flow: COLUMN
+                flex_align_main: CENTER
+                flex_align_cross: CENTER
+                pad_row: 0
+              widgets:
+                - label:
+                    id: weather_icon_label
+                    width: 170
+                    height: 88
+                    text_color: 0xeebf41
+                    text_font: weather_icons
+                    text_align: CENTER
+                    text: "\U000F0026"
+                - label:
+                    id: weather_condition_label
+                    width: 195
+                    height: 28
+                    text_color: 0xffffff
+                    text_font: libreFranklin18
+                    text_align: CENTER
+                    long_mode: DOT
+                    text: "Waiting for weather..."
           - label:
               id: weather_temperature_label
-              width: 260
-              height: 90
+              width: 240
+              height: 76
               text_color: 0xffffff
               text_font: libreFranklin50
               text_align: CENTER
               text: "--"
-    - label:
-        id: weather_condition_label
-        width: 443
-        height: 44
-        text_color: 0xffffff
-        text_font: libreFranklin24
-        text_align: CENTER
-        text: "Waiting for weather..."
     - obj:
         width: 443
-        height: 72
+        height: 50
         bg_opa: TRANSP
         pad_all: 0
         layout:
@@ -55,7 +98,7 @@ obj:
         widgets:
           - obj:
               width: 216
-              height: 64
+              height: 44
               radius: 15
               bg_color: 0x272727
               bg_opa: COVER
@@ -75,7 +118,7 @@ obj:
                     text: "Humidity --"
           - obj:
               width: 216
-              height: 64
+              height: 44
               radius: 15
               bg_color: 0x272727
               bg_opa: COVER
@@ -93,3 +136,136 @@ obj:
                     text_font: libreFranklin18
                     text_align: CENTER
                     text: "Wind --"
+    - label:
+        width: 443
+        height: 20
+        text_color: 0xababab
+        text_font: libreFranklin14
+        text_align: CENTER
+        text: "Next hours"
+    - obj:
+        width: 443
+        height: 92
+        bg_opa: TRANSP
+        pad_all: 0
+        layout:
+          type: FLEX
+          flex_flow: ROW
+          flex_align_main: SPACE_BETWEEN
+          flex_align_cross: CENTER
+          pad_row: 0
+        widgets:
+          - obj:
+              width: 140
+              height: 92
+              radius: 12
+              bg_color: 0x272727
+              bg_opa: COVER
+              pad_all: 0
+              layout:
+                type: FLEX
+                flex_flow: COLUMN
+                flex_align_main: CENTER
+                flex_align_cross: CENTER
+                pad_row: 0
+              widgets:
+                - label:
+                    id: weather_forecast_1_time_label
+                    width: 138
+                    height: 18
+                    text_color: 0xababab
+                    text_font: libreFranklin14
+                    text_align: CENTER
+                    text: "--:--"
+                - label:
+                    id: weather_forecast_1_icon_label
+                    width: 138
+                    height: 28
+                    text_color: 0xeebf41
+                    text_font: weather_forecast_icons
+                    text_align: CENTER
+                    text: "\U000F0026"
+                - label:
+                    id: weather_forecast_1_temperature_label
+                    width: 138
+                    height: 24
+                    text_color: 0xffffff
+                    text_font: libreFranklin18
+                    text_align: CENTER
+                    text: "--"
+          - obj:
+              width: 140
+              height: 92
+              radius: 12
+              bg_color: 0x272727
+              bg_opa: COVER
+              pad_all: 0
+              layout:
+                type: FLEX
+                flex_flow: COLUMN
+                flex_align_main: CENTER
+                flex_align_cross: CENTER
+                pad_row: 0
+              widgets:
+                - label:
+                    id: weather_forecast_2_time_label
+                    width: 138
+                    height: 18
+                    text_color: 0xababab
+                    text_font: libreFranklin14
+                    text_align: CENTER
+                    text: "--:--"
+                - label:
+                    id: weather_forecast_2_icon_label
+                    width: 138
+                    height: 28
+                    text_color: 0xeebf41
+                    text_font: weather_forecast_icons
+                    text_align: CENTER
+                    text: "\U000F0026"
+                - label:
+                    id: weather_forecast_2_temperature_label
+                    width: 138
+                    height: 24
+                    text_color: 0xffffff
+                    text_font: libreFranklin18
+                    text_align: CENTER
+                    text: "--"
+          - obj:
+              width: 140
+              height: 92
+              radius: 12
+              bg_color: 0x272727
+              bg_opa: COVER
+              pad_all: 0
+              layout:
+                type: FLEX
+                flex_flow: COLUMN
+                flex_align_main: CENTER
+                flex_align_cross: CENTER
+                pad_row: 0
+              widgets:
+                - label:
+                    id: weather_forecast_3_time_label
+                    width: 138
+                    height: 18
+                    text_color: 0xababab
+                    text_font: libreFranklin14
+                    text_align: CENTER
+                    text: "--:--"
+                - label:
+                    id: weather_forecast_3_icon_label
+                    width: 138
+                    height: 28
+                    text_color: 0xeebf41
+                    text_font: weather_forecast_icons
+                    text_align: CENTER
+                    text: "\U000F0026"
+                - label:
+                    id: weather_forecast_3_temperature_label
+                    width: 138
+                    height: 24
+                    text_color: 0xffffff
+                    text_font: libreFranklin18
+                    text_align: CENTER
+                    text: "--"

@@ -36,7 +36,7 @@ esphome:
               checked: !lambda "return id(use_24h_clock);"
 
 logger:
-  level: INFO
+  level: DEBUG
 
 api:
   encryption:
@@ -49,6 +49,7 @@ api:
         then:
           - delay: 2s # So all sensors can load their values
           - lvgl.widget.hide: connecting_view
+          - script.execute: fetch_weather_forecast
   on_client_disconnected:
     - if:
         condition:
@@ -56,3 +57,4 @@ api:
               return client_info.find("Home Assistant") != std::string::npos;
         then:
           - lvgl.widget.show: connecting_view
+          - script.execute: clear_weather_forecast

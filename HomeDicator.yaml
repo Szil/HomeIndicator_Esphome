@@ -29,6 +29,44 @@ substitutions:
   page_transition_time: 150ms # How long to animate the transition between pages.
   user_interface_debug_mode: "false" # Draws borders around objects and labels for layouting
 
+globals:
+  - id: weather_forecast_1_time
+    type: std::string
+    restore_value: no
+    initial_value: '"--:--"'
+  - id: weather_forecast_1_icon
+    type: std::string
+    restore_value: no
+    initial_value: '"\U000F0026"'
+  - id: weather_forecast_1_temperature
+    type: std::string
+    restore_value: no
+    initial_value: '"--"'
+  - id: weather_forecast_2_time
+    type: std::string
+    restore_value: no
+    initial_value: '"--:--"'
+  - id: weather_forecast_2_icon
+    type: std::string
+    restore_value: no
+    initial_value: '"\U000F0026"'
+  - id: weather_forecast_2_temperature
+    type: std::string
+    restore_value: no
+    initial_value: '"--"'
+  - id: weather_forecast_3_time
+    type: std::string
+    restore_value: no
+    initial_value: '"--:--"'
+  - id: weather_forecast_3_icon
+    type: std::string
+    restore_value: no
+    initial_value: '"\U000F0026"'
+  - id: weather_forecast_3_temperature
+    type: std::string
+    restore_value: no
+    initial_value: '"--"'
+
 packages:
   HomeDicator: !include HomeDicator/device/sdl.yaml
 
@@ -138,6 +176,14 @@ text_sensor:
         - script.execute: refresh_weather_display
 
   - platform: homeassistant
+    id: weather_friendly_name
+    entity_id: ${weather_entity}
+    attribute: friendly_name
+    on_value:
+      then:
+        - script.execute: refresh_weather_display
+
+  - platform: homeassistant
     id: weather_temperature_unit
     entity_id: ${weather_entity}
     attribute: temperature_unit
@@ -153,9 +199,25 @@ text_sensor:
       then:
         - script.execute: refresh_weather_display
 
+interval:
+  - interval: 1h
+    then:
+      - if:
+          condition:
+            api.connected:
+              state_subscription_only: true
+          then:
+            - script.execute: fetch_weather_forecast
+
 script:
   - id: refresh_weather_display
     then:
+      - lvgl.label.update:
+          id: weather_location_label
+          text: !lambda |-
+            const std::string &name = id(weather_friendly_name).state;
+            if (name.empty() || name == "unknown" || name == "unavailable") return "Forecast location unavailable";
+            return name.c_str();
       - lvgl.label.update:
           id: weather_condition_label
           text: !lambda |-
@@ -246,6 +308,177 @@ script:
               snprintf(buffer, sizeof(buffer), "Wind %.1f %s", id(weather_wind_speed).state, unit.c_str());
             }
             return buffer;
+
+  - id: refresh_weather_forecast_display
+    then:
+      - lambda: |-
+          ESP_LOGD("weather", "Refreshing forecast display labels");
+      - lvgl.label.update:
+          id: weather_forecast_1_time_label
+          text: !lambda return id(weather_forecast_1_time).c_str();
+      - lvgl.label.update:
+          id: weather_forecast_1_icon_label
+          text: !lambda return id(weather_forecast_1_icon).c_str();
+      - lvgl.label.update:
+          id: weather_forecast_1_temperature_label
+          text: !lambda return id(weather_forecast_1_temperature).c_str();
+      - lvgl.label.update:
+          id: weather_forecast_2_time_label
+          text: !lambda return id(weather_forecast_2_time).c_str();
+      - lvgl.label.update:
+          id: weather_forecast_2_icon_label
+          text: !lambda return id(weather_forecast_2_icon).c_str();
+      - lvgl.label.update:
+          id: weather_forecast_2_temperature_label
+          text: !lambda return id(weather_forecast_2_temperature).c_str();
+      - lvgl.label.update:
+          id: weather_forecast_3_time_label
+          text: !lambda return id(weather_forecast_3_time).c_str();
+      - lvgl.label.update:
+          id: weather_forecast_3_icon_label
+          text: !lambda return id(weather_forecast_3_icon).c_str();
+      - lvgl.label.update:
+          id: weather_forecast_3_temperature_label
+          text: !lambda return id(weather_forecast_3_temperature).c_str();
+
+  - id: clear_weather_forecast
+    then:
+      - lambda: |-
+          id(weather_forecast_1_time) = "--:--";
+          id(weather_forecast_1_icon) = "\U000F0026";
+          id(weather_forecast_1_temperature) = "--";
+          id(weather_forecast_2_time) = "--:--";
+          id(weather_forecast_2_icon) = "\U000F0026";
+          id(weather_forecast_2_temperature) = "--";
+          id(weather_forecast_3_time) = "--:--";
+          id(weather_forecast_3_icon) = "\U000F0026";
+          id(weather_forecast_3_temperature) = "--";
+      - script.execute: refresh_weather_forecast_display
+
+  - id: fetch_weather_forecast
+    then:
+      - lambda: |-
+          ESP_LOGI("weather", "Requesting hourly forecast for ${weather_entity}");
+      - homeassistant.action:
+          action: weather.get_forecasts
+          data:
+            entity_id: ${weather_entity}
+            type: hourly
+          capture_response: true
+          response_template: |-
+            {% set forecasts = response['${weather_entity}']['forecast'] %}
+            {% set ns = namespace(items=[]) %}
+            {% for item in forecasts[:3] %}
+            {% set ns.items = ns.items + [{
+              'time': as_local(as_datetime(item['datetime'])).strftime('%H:%M'),
+              'condition': item.get('condition', ''),
+              'temperature': item.get('temperature', none)
+            }] %}
+            {% endfor %}
+            {{ {'forecast': ns.items} | to_json }}
+          on_success:
+            - lambda: |-
+                ESP_LOGI("weather", "on_success callback executed");
+                const JsonVariantConst response_data = response["response"];
+                ESP_LOGD("weather", "Template response key present: %s; value is string: %s",
+                    response_data.isNull() ? "no" : "yes",
+                    response_data.is<std::string>() ? "yes" : "no");
+                const std::string forecast_json = response_data.as<std::string>();
+                ESP_LOGI("weather", "Response template output (%u bytes): %s",
+                    static_cast<unsigned>(forecast_json.size()), forecast_json.c_str());
+                auto set_unavailable = []() {
+                  id(weather_forecast_1_time) = "--:--";
+                  id(weather_forecast_1_icon) = "\U000F0026";
+                  id(weather_forecast_1_temperature) = "--";
+                  id(weather_forecast_2_time) = "--:--";
+                  id(weather_forecast_2_icon) = "\U000F0026";
+                  id(weather_forecast_2_temperature) = "--";
+                  id(weather_forecast_3_time) = "--:--";
+                  id(weather_forecast_3_icon) = "\U000F0026";
+                  id(weather_forecast_3_temperature) = "--";
+                };
+                size_t parsed_forecast_count = 0;
+                bool forecast_array_found = false;
+                const bool parsed = json::parse_json(forecast_json, [&](JsonObject root) -> bool {
+                  JsonArray forecasts = root["forecast"].as<JsonArray>();
+                  if (forecasts.isNull()) {
+                    ESP_LOGW("weather", "JSON parsed, but 'forecast' is missing or not an array");
+                    return false;
+                  }
+                  forecast_array_found = true;
+                  parsed_forecast_count = forecasts.size();
+                  auto icon_for = [](const std::string &condition) -> const char * {
+                    if (condition == "clear-night") return "\U000F0594";
+                    if (condition == "cloudy") return "\U000F0590";
+                    if (condition == "fog") return "\U000F0591";
+                    if (condition == "hail") return "\U000F0592";
+                    if (condition == "lightning") return "\U000F0593";
+                    if (condition == "lightning-rainy") return "\U000F067E";
+                    if (condition == "partlycloudy") return "\U000F0595";
+                    if (condition == "pouring") return "\U000F0596";
+                    if (condition == "rainy") return "\U000F0597";
+                    if (condition == "snowy") return "\U000F0598";
+                    if (condition == "snowy-rainy") return "\U000F067F";
+                    if (condition == "sunny") return "\U000F0599";
+                    if (condition == "windy") return "\U000F059D";
+                    if (condition == "windy-variant") return "\U000F059E";
+                    return "\U000F0026";
+                  };
+                  auto set_forecast = [&](size_t index, std::string &time, std::string &icon, std::string &temperature) {
+                    if (index >= forecasts.size()) {
+                      time = "--:--";
+                      icon = "\U000F0026";
+                      temperature = "--";
+                      return;
+                    }
+                    JsonObject item = forecasts[index].as<JsonObject>();
+                    if (item.isNull()) {
+                      time = "--:--";
+                      icon = "\U000F0026";
+                      temperature = "--";
+                      return;
+                    }
+                    time = item["time"].as<std::string>();
+                    if (time.empty() || time == "unknown") time = "--:--";
+                    icon = icon_for(item["condition"].as<std::string>());
+                    JsonVariantConst value = item["temperature"];
+                    if (value.isNull() || (!value.is<float>() && !value.is<int>())) {
+                      temperature = "--";
+                      return;
+                    }
+                    const float degrees = value.as<float>();
+                    if (!std::isfinite(degrees)) {
+                      temperature = "--";
+                      return;
+                    }
+                    const std::string &unit = id(weather_temperature_unit).state;
+                    char buffer[24];
+                    if (unit.empty() || unit == "unknown" || unit == "unavailable") {
+                      snprintf(buffer, sizeof(buffer), "%.0f ?", degrees);
+                    } else {
+                      snprintf(buffer, sizeof(buffer), "%.1f%s", degrees, unit.c_str());
+                    }
+                    temperature = buffer;
+                  };
+                  set_forecast(0, id(weather_forecast_1_time), id(weather_forecast_1_icon), id(weather_forecast_1_temperature));
+                  set_forecast(1, id(weather_forecast_2_time), id(weather_forecast_2_icon), id(weather_forecast_2_temperature));
+                  set_forecast(2, id(weather_forecast_3_time), id(weather_forecast_3_icon), id(weather_forecast_3_temperature));
+                  return true;
+                });
+                ESP_LOGI("weather", "JSON parsing result: %s; forecast array found: %s; item count: %u",
+                    parsed ? "success" : "failure",
+                    forecast_array_found ? "yes" : "no",
+                    static_cast<unsigned>(parsed_forecast_count));
+                if (!parsed) set_unavailable();
+                ESP_LOGD("weather", "Forecast values for display: [%s, %s], [%s, %s], [%s, %s]",
+                    id(weather_forecast_1_time).c_str(), id(weather_forecast_1_temperature).c_str(),
+                    id(weather_forecast_2_time).c_str(), id(weather_forecast_2_temperature).c_str(),
+                    id(weather_forecast_3_time).c_str(), id(weather_forecast_3_temperature).c_str());
+                id(refresh_weather_forecast_display).execute();
+          on_error:
+            - lambda: |-
+                ESP_LOGE("weather", "on_error callback executed: %s", error.c_str());
+            - script.execute: clear_weather_forecast
 
   - id: refresh_heater_display
     then:
