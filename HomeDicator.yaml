@@ -93,24 +93,46 @@ sensor:
         hass_sensor_id: "airgradient_schlafzimmer_particulate_matter_1_0_m_concentration" # You can ommit the "sensor."
 
   - !include
-      file: HomeDicator/core/templates/climate_sensor_wide.yaml
+      file: HomeDicator/core/templates/valve_temperature.yaml
       vars:
-        hass_climate_id: "schlafzimmer_schreibtisch" # You can ommit the "climate."
+        hass_climate_id: "valve2"
+        attribute: "current_temperature"
+        sensor_suffix: "current_temperature"
 
   - !include
-      file: HomeDicator/core/templates/climate_sensor.yaml
+      file: HomeDicator/core/templates/valve_temperature.yaml
       vars:
-        hass_climate_id: "wohnzimmer_fenster_links" # You can ommit the "climate."
+        hass_climate_id: "valve2"
+        attribute: "temperature"
+        sensor_suffix: "target_temperature"
 
   - !include
-      file: HomeDicator/core/templates/climate_sensor.yaml
+      file: HomeDicator/core/templates/valve_temperature.yaml
       vars:
-        hass_climate_id: "kuche" # You can ommit the "climate."
+        hass_climate_id: "valve1"
+        attribute: "current_temperature"
+        sensor_suffix: "current_temperature"
 
   - !include
-      file: HomeDicator/core/templates/climate_sensor_wide.yaml
+      file: HomeDicator/core/templates/valve_temperature.yaml
       vars:
-        hass_climate_id: "badezimmer_fenster" # You can ommit the "climate."
+        hass_climate_id: "valve1"
+        attribute: "temperature"
+        sensor_suffix: "target_temperature"
+
+  - !include
+      file: HomeDicator/core/templates/valve_temperature.yaml
+      vars:
+        hass_climate_id: "valve3"
+        attribute: "current_temperature"
+        sensor_suffix: "current_temperature"
+
+  - !include
+      file: HomeDicator/core/templates/valve_temperature.yaml
+      vars:
+        hass_climate_id: "valve3"
+        attribute: "temperature"
+        sensor_suffix: "target_temperature"
 
   - platform: homeassistant
     id: heater_target_temperature
@@ -145,6 +167,21 @@ sensor:
         - script.execute: refresh_weather_display
 
 text_sensor:
+  - !include
+      file: HomeDicator/core/templates/valve_state.yaml
+      vars:
+        hass_climate_id: "valve2"
+
+  - !include
+      file: HomeDicator/core/templates/valve_state.yaml
+      vars:
+        hass_climate_id: "valve1"
+
+  - !include
+      file: HomeDicator/core/templates/valve_state.yaml
+      vars:
+        hass_climate_id: "valve3"
+
   - platform: homeassistant
     id: heater_entity_state
     entity_id: climate.${heater_entity}
@@ -210,6 +247,21 @@ interval:
             - script.execute: fetch_weather_forecast
 
 script:
+  - !include
+      file: HomeDicator/core/templates/refresh_valve_display.yaml
+      vars:
+        hass_climate_id: "valve2"
+
+  - !include
+      file: HomeDicator/core/templates/refresh_valve_display.yaml
+      vars:
+        hass_climate_id: "valve1"
+
+  - !include
+      file: HomeDicator/core/templates/refresh_valve_display.yaml
+      vars:
+        hass_climate_id: "valve3"
+
   - id: refresh_weather_display
     then:
       - lvgl.label.update:
@@ -600,7 +652,7 @@ lvgl:
         - !include
             file: HomeDicator/user_interface/templates/page_title.yaml
             vars:
-              title: "Temperature" # CHANGE PAGE TITLE HERE
+              title: "Valves"
         - obj:
             styles: content_container
             layout:
@@ -610,41 +662,34 @@ lvgl:
               flex_align_cross: CENTER
             widgets:
               - !include
-                  file: HomeDicator/user_interface/templates/tiles/thermostat/wide_half_height.yaml
+                  file: HomeDicator/user_interface/templates/tiles/thermostat/valve_square.yaml
                   vars:
                     color: 0xeebf41
-                    hass_climate_id: "schlafzimmer_schreibtisch"
+                    hass_climate_id: "valve2"
+                    title: "Bedroom"
                     min_value: 5
                     max_value: 25
-                    unit: "°C"
-                    icon: "\U000F08A0"
               - !include
-                  file: HomeDicator/user_interface/templates/tiles/thermostat/square.yaml
+                  file: HomeDicator/user_interface/templates/tiles/thermostat/valve_square.yaml
                   vars:
                     color: 0xeebf41
-                    hass_climate_id: "wohnzimmer_fenster_links"
+                    hass_climate_id: "valve1"
+                    title: "Bedroom1"
                     min_value: 5
                     max_value: 25
-                    unit: "°C"
-                    title: "Living Room"
               - !include
-                  file: HomeDicator/user_interface/templates/tiles/thermostat/square.yaml
+                  file: HomeDicator/user_interface/templates/tiles/thermostat/valve_square.yaml
                   vars:
                     color: 0xeebf41
-                    hass_climate_id: "kuche"
+                    hass_climate_id: "valve3"
+                    title: "Attic"
                     min_value: 5
                     max_value: 25
-                    unit: "°C"
-                    title: "Kittchen"
               - !include
-                  file: HomeDicator/user_interface/templates/tiles/thermostat/wide_half_height.yaml
+                  file: HomeDicator/user_interface/templates/tiles/thermostat/valve_placeholder.yaml
                   vars:
                     color: 0xeebf41
-                    hass_climate_id: "badezimmer_fenster"
-                    min_value: 5
-                    max_value: 25
-                    unit: "°C"
-                    icon: "\U000F1819"
+                    title: "N/A"
     - id: second_page
       bg_opa: TRANSP
       widgets:

@@ -1,0 +1,86 @@
+obj:
+  styles: info_or_button_tile
+  layout:
+    type: FLEX
+    flex_flow: COLUMN
+    flex_align_main: CENTER
+    flex_align_cross: CENTER
+    flex_align_track: CENTER
+    pad_row: 0
+  widgets:
+    - obj:
+        width: 205
+        height: 155
+        radius: 15
+        pad_all: 0
+        bg_opa: TRANSP
+        widgets:
+          - obj:
+              width: 205
+              height: 155
+              radius: 15
+              bg_opa: TRANSP
+              pad_all: 0
+              layout:
+                type: FLEX
+                flex_flow: COLUMN
+                flex_align_main: CENTER
+                flex_align_cross: CENTER
+                flex_align_track: CENTER
+                pad_row: 0
+              widgets:
+                - arc:
+                    state:
+                      disabled: true
+                    pad_all: 0
+                    adjustable: false
+                    min_value: 5
+                    max_value: 25
+                    value: 5
+                    arc_width: 20
+                    arc_color: !lambda |-
+                      uint32_t color = ${color};
+                      float darken_factor = 0.25;
+                      float saturation_reduction_factor = 0.8;
+                      return adjust_color(color, darken_factor, saturation_reduction_factor);
+                    indicator:
+                      arc_width: 20
+                      arc_color: ${color}
+                    knob:
+                      bg_color: 0xFFFFFF
+          - obj:
+              width: 205
+              height: 155
+              radius: 15
+              bg_opa: TRANSP
+              pad_left: 8
+              pad_right: 8
+              pad_top: 14
+              pad_bottom: 10
+              clickable: false
+              layout:
+                type: FLEX
+                flex_flow: COLUMN
+                flex_align_main: SPACE_BETWEEN
+                flex_align_cross: CENTER
+                flex_align_track: CENTER
+                pad_row: 0
+              widgets:
+                - label:
+                    width: 189
+                    text_align: CENTER
+                    text_color: 0xffffff
+                    text_font: libreFranklin10
+                    text: "T: -- C"
+                - label:
+                    width: 189
+                    text_align: CENTER
+                    text_color: 0xffffff
+                    text_font: libreFranklin24
+                    text: "-- C"
+                - label:
+                    styles: info_or_button_tile_subtitle
+                    width: 189
+                    text_align: CENTER
+                    text: ${title}
+                    text_font: libreFranklin10

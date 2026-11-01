@@ -1,0 +1,72 @@
+id: refresh_valve_${hass_climate_id}_display
+then:
+  - if:
+      condition:
+        lambda: |-
+          const std::string &state = id(valve_${hass_climate_id}_state).state;
+          return state.empty() || state == "unknown" || state == "unavailable";
+      then:
+        - lvgl.label.update:
+            id: lvgl_valve_${hass_climate_id}_current_label
+            text: "T: -- C"
+        - lvgl.label.update:
+            id: lvgl_valve_${hass_climate_id}_target_label
+            text: "-- C"
+        - lvgl.widget.update:
+            id: lvgl_valve_${hass_climate_id}_arc
+            state:
+              disabled: true
+      else:
+        - lvgl.label.update:
+            id: lvgl_valve_${hass_climate_id}_current_label
+            text: !lambda |-
+              const float current = id(valve_${hass_climate_id}_current_temperature).state;
+              if (!std::isfinite(current)) return "T: -- C";
+              char buffer[16];
+              snprintf(buffer, sizeof(buffer), "T: %.1f C", current);
+              return buffer;
+        - if:
+            condition:
+              lambda: return !id(user_is_interacting);
+            then:
+              - if:
+                  condition:
+                    lambda: return std::isfinite(id(valve_${hass_climate_id}_target_temperature).state);
+                  then:
+                    - lvgl.label.update:
+                        id: lvgl_valve_${hass_climate_id}_target_label
+                        text: !lambda |-
+                          const float raw_target = id(valve_${hass_climate_id}_target_temperature).state;
+                          const float target = raw_target < 5.0f ? 5.0f : raw_target > 25.0f ? 25.0f : raw_target;
+                          char buffer[32];
+                          snprintf(buffer, sizeof(buffer), "%.1f C", raw_target);
+                          return buffer;
+                    - lvgl.arc.update:
+                        id: lvgl_valve_${hass_climate_id}_arc
+                        value: !lambda |-
+                          const float target = id(valve_${hass_climate_id}_target_temperature).state;
+                          return target < 5.0f ? 5.0f : target > 25.0f ? 25.0f : target;
+                    - lvgl.widget.update:
+                        id: lvgl_valve_${hass_climate_id}_arc
+                        state:
+                          disabled: false
+                  else:
+                    - lvgl.label.update:
+                        id: lvgl_valve_${hass_climate_id}_target_label
+                        text: "-- C"
+                    - lvgl.widget.update:
+                        id: lvgl_valve_${hass_climate_id}_arc
+                        state:
+                          disabled: true
+            else:
+              - if:
+                  condition:
+                    lambda: return !std::isfinite(id(valve_${hass_climate_id}_target_temperature).state);
+                  then:
+                    - lvgl.label.update:
+                        id: lvgl_valve_${hass_climate_id}_target_label
+                        text: "-- C"
+                    - lvgl.widget.update:
+                        id: lvgl_valve_${hass_climate_id}_arc
+                        state:
+                          disabled: true

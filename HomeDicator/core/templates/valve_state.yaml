@@ -1,0 +1,6 @@
+platform: homeassistant
+id: valve_${hass_climate_id}_state
+entity_id: climate.${hass_climate_id}
+on_value:
+  then:
+    - script.execute: refresh_valve_${hass_climate_id}_display
